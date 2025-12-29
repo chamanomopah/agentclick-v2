@@ -1,0 +1,26 @@
+project:
+  name: "AgentClick V2"
+  total_stories: 12
+  created_at: "2025-12-29T00:00:00Z"
+  current_story: null
+
+stories:
+  1-project-structure-core-models: review
+  2-workspace-manager: backlog
+  3-dynamic-agent-loader: backlog
+  4-template-engine: backlog
+  5-virtual-agent-executor: backlog
+  6-enhanced-input-processor: backlog
+  7-mini-popup-v2: backlog
+  8-detailed-popup-workspaces-tab: backlog
+  9-hotkey-processor-v2: backlog
+  10-configuration-ui-templates-editor: backlog
+  11-activity-log-notifications: backlog
+  12-migration-script-documentation: backlog
+
+# STATUS DEFINITIONS:
+# backlog - Story created, not started
+# ready-for-dev - Story context loaded, ready for implementation
+# in-dev - Currently being implemented
+# ready-for-review - Implementation complete, pending review
+# done - Story completed and verified
