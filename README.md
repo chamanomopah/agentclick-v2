@@ -37,6 +37,13 @@ AgentClick V2 is a virtual agent automation framework for task execution and wor
 - Each workspace has its own agents, folder, and settings
 - Easy workspace switching and management
 - Visual identification with emojis and colors
+- **Non-blocking workspace validation** - System starts even if workspace folders don't exist
+
+### Hotkeys (V2)
+AgentClick V2 provides convenient hotkeys for agent execution:
+- **Pause** - Execute current agent (select text → press Pause)
+- **Ctrl + Pause** - Cycle through agents in current workspace
+- **Ctrl + Shift + Pause** - Cycle through workspaces (NEW in V2)
 
 ### Template Engine
 - Configure agent behavior with variables
@@ -130,10 +137,15 @@ All tests should pass.
    ```
 
    The application will:
-   - Create default workspace configuration
+   - Create default workspace configuration if it doesn't exist
+   - Load workspaces from `@agentclick-v2/config/workspaces.yaml`
+   - **Note:** Workspace folders are optional - the system will start even if configured folders don't exist
    - Scan for agents in `.claude/commands/`
    - Start the hotkey system
    - Show welcome notification
+   - Display mini popup in bottom-right corner
+
+   **Important:** Unlike V1, workspace folder validation is **non-blocking**. Missing folders will generate a warning but won't prevent the system from starting.
 
    **Note:** The `python -m agentclick_v2` option is available for development but requires proper package installation.
 
@@ -330,6 +342,41 @@ The migration script creates automatic backups and can rollback. See [Migration 
 - Check [User Guide](docs/USER_GUIDE.md#troubleshooting)
 - Review [Migration Guide](docs/MIGRATION_GUIDE.md#common-migration-issues)
 - Open an issue on GitHub
+
+### System doesn't start - "failed to initialize core systems"
+
+**Issue:** If you see this error, it means the workspace configuration file is missing or corrupted.
+
+**Solution:**
+1. Check if `@agentclick-v2/config/workspaces.yaml` exists
+2. If it exists, try deleting it and restarting - the system will create a new default workspace
+3. If it doesn't exist, the system should create it automatically
+4. Check logs for detailed error messages
+
+**Note:** As of V2, workspace folders are **optional**. Missing workspace folders will only generate a warning, not prevent startup.
+
+### Hotkeys not working?
+
+**V2 Hotkeys:**
+- **Pause key** - Execute current agent (same as V1)
+- **Ctrl + Pause** - Switch between agents in current workspace (same as V1)
+- **Ctrl + Shift + Pause** - Switch between workspaces (NEW in V2)
+
+If hotkeys don't work:
+1. Make sure the application is running
+2. Check that you see the mini popup in the bottom-right corner
+3. Some applications may capture global hotkeys - try from a different application
+4. Check logs for hotkey registration errors
+
+### Mini popup doesn't appear
+
+**Issue:** Mini popup should appear automatically on startup.
+
+**Solution:**
+1. Verify the system started without errors (check logs)
+2. Make sure at least one workspace is configured
+3. Try restarting the application
+4. Check that PyQt6 is installed correctly: `pip show PyQt6`
 
 ## 📄 License
 

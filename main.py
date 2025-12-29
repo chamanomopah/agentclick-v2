@@ -17,6 +17,7 @@ from pathlib import Path
 from typing import Optional
 
 # Add project root to Python path
+# The core modules are in @agentclick-v2 directory
 project_root = Path(__file__).parent / '@agentclick-v2'
 if str(project_root) not in sys.path:
     sys.path.insert(0, str(project_root))
@@ -41,6 +42,7 @@ from core.agent_loader import DynamicAgentLoader
 from core.hotkey_processor import HotkeyProcessorV2
 from core.input_processor import InputProcessor
 from core.agent_executor import VirtualAgentExecutor
+from core.template_engine import TemplateEngine
 
 # UI imports
 from ui.mini_popup_v2 import MiniPopupV2
@@ -211,7 +213,7 @@ async def _initialize_core_systems(logger: LoggerV2) -> tuple:
     # Initialize DynamicAgentLoader
     agent_loader = DynamicAgentLoader()
     try:
-        agents = await agent_loader.load_all_agents()
+        agents = await agent_loader.scan_all()
         logger.add_log_entry(
             category=LogCategory.SUCCESS,
             message=f"Loaded {len(agents)} agent(s) from .claude/"
@@ -244,13 +246,12 @@ def _initialize_ui_components(workspace_manager, agent_loader, logger: LoggerV2)
     )
 
     # Create MiniPopupV2
-    mini_popup = MiniPopupV2(workspace_manager=workspace_manager)
+    mini_popup = MiniPopupV2()
 
     # Create DetailedPopupV2
-    popup_window = DetailedPopupV2(
-        workspace_manager=workspace_manager,
-        agent_loader=agent_loader
-    )
+    popup_window = DetailedPopupV2()
+    popup_window.workspace_manager = workspace_manager
+    popup_window.agent_loader = agent_loader
 
     logger.add_log_entry(
         category=LogCategory.SUCCESS,
@@ -288,8 +289,11 @@ def _initialize_hotkey_system(
     # Create InputProcessor
     input_processor = InputProcessor()
 
+    # Create TemplateEngine
+    template_engine = TemplateEngine()
+
     # Create VirtualAgentExecutor
-    agent_executor = VirtualAgentExecutor()
+    agent_executor = VirtualAgentExecutor(template_engine=template_engine)
 
     # Create HotkeyProcessor
     hotkey_processor = HotkeyProcessorV2(
@@ -297,7 +301,8 @@ def _initialize_hotkey_system(
         agent_executor=agent_executor,
         input_processor=input_processor,
         mini_popup=mini_popup,
-        popup_window=popup_window
+        activity_logger=logger,
+        notification_manager=None  # Will create if needed
     )
 
     logger.add_log_entry(
@@ -402,17 +407,17 @@ def main() -> int:
 
         # Start hotkey listener (drives the system) with validation
         try:
-            hotkey_processor.start()
+            hotkey_processor.setup_hotkeys()
 
             # Verify hotkeys registered successfully
-            if hasattr(hotkey_processor, 'is_listening') and not hotkey_processor.is_listening():
+            if hasattr(hotkey_processor, '_listener') and hotkey_processor._listener is None:
                 logger.add_log_entry(
                     category=LogCategory.WARNING,
                     message="Hotkey processor failed to start - running in UI-only mode"
                 )
                 notification_mgr = NotificationManager()
                 notification_mgr.show_notification(
-                    notification_type=NotificationType.WARNING,
+                    type=NotificationType.WARNING,
                     title="Global Hotkeys Unavailable",
                     message="Hotkey registration failed. Use the UI to execute agents."
                 )
@@ -428,7 +433,7 @@ def main() -> int:
             )
             notification_mgr = NotificationManager()
             notification_mgr.show_notification(
-                notification_type=NotificationType.WARNING,
+                type=NotificationType.WARNING,
                 title="Global Hotkeys Unavailable",
                 message=f"Hotkey registration failed: {e}\n\nUse the UI to execute agents."
             )
@@ -446,7 +451,7 @@ def main() -> int:
         if len(workspace_manager.workspaces) == 1:
             notification_mgr = NotificationManager()
             notification_mgr.show_notification(
-                notification_type=NotificationType.INFO,
+                type=NotificationType.INFO,
                 title="Welcome to AgentClick V2!",
                 message="Press Pause to execute agents, Ctrl+Pause to switch agents"
             )
