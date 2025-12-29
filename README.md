@@ -78,8 +78,12 @@ agentclick-v2/
 ├── tests/               # Unit and integration tests
 ├── ui/                  # User interface components
 ├── utils/               # Utilities and helpers
-└── .claude/             # Claude-specific configurations
-    └── commands/        # Agent definitions (.md files)
+├── .claude/             # Claude-specific configurations
+│   └── commands/        # Agent definitions (.md files)
+├── main.py              # 🆕 Primary entry point
+└── @agentclick-v2/
+    ├── __main__.py      # 🆕 Module entry point
+    └── __init__.py      # Package initialization
 ```
 
 ## 🔧 Installation
@@ -118,7 +122,22 @@ All tests should pass.
 
    AgentClick V2 will create default configuration files on first run.
 
-2. **Create Your First Agent**
+2. **Start the Application**
+
+   ```bash
+   # Recommended: Run from project root using main.py
+   python main.py
+   ```
+
+   The application will:
+   - Create default workspace configuration
+   - Scan for agents in `.claude/commands/`
+   - Start the hotkey system
+   - Show welcome notification
+
+   **Note:** The `python -m agentclick_v2` option is available for development but requires proper package installation.
+
+3. **Create Your First Agent**
 
    Create a file `.claude/commands/my-agent.md`:
 

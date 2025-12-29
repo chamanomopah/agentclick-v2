@@ -56,13 +56,17 @@ class TestWorkspaceValidator:
             validator.validate_workspace_folder(existing_dir)
 
     def test_validate_workspace_folder_not_exists(self):
-        """Should reject non-existent folders."""
+        """Should warn (not reject) non-existent folders by default (Story 0 fix)."""
         validator = WorkspaceValidator()
 
         non_existent = Path("/non/existent/path/that/does/not/exist")
 
+        # Non-strict mode: should NOT raise, only log warning
+        validator.validate_workspace_folder(non_existent)
+
+        # Strict mode: should raise error
         with pytest.raises(WorkspaceValidationError, match="does not exist"):
-            validator.validate_workspace_folder(non_existent)
+            validator.validate_workspace_folder(non_existent, strict=True)
 
     def test_validate_workspace_folder_with_string(self):
         """Should accept string paths that exist."""

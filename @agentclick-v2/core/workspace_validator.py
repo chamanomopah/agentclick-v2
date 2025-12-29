@@ -71,22 +71,39 @@ class WorkspaceValidator:
                 "must contain only alphanumeric characters, hyphens, and underscores"
             )
 
-    def validate_workspace_folder(self, folder: str | Path) -> None:
+    def validate_workspace_folder(self, folder: str | Path, strict: bool = False) -> None:
         """
-        Validate that a workspace folder exists.
+        Validate a workspace folder.
 
         Args:
             folder: Path to the workspace folder (string or Path object)
+            strict: If True, raises error when folder doesn't exist (default: False)
+                    When False, only logs a warning if folder doesn't exist
 
         Raises:
-            WorkspaceValidationError: If the folder doesn't exist
+            WorkspaceValidationError: If strict=True and the folder doesn't exist
 
         Example:
             >>> validator.validate_workspace_folder('/existing/path')  # OK
-            >>> validator.validate_workspace_folder('/nonexistent')  # Raises error
+            >>> validator.validate_workspace_folder('/nonexistent')  # WARNING only (non-blocking)
+            >>> validator.validate_workspace_folder('/nonexistent', strict=True)  # Raises error
         """
         path = Path(folder)
 
+        # If not strict mode, only validate path format, not existence
+        if not strict:
+            # Non-blocking: just warn if doesn't exist, don't raise
+            if not path.exists():
+                # Import here to avoid circular dependency
+                import logging
+                logger = logging.getLogger(__name__)
+                logger.warning(
+                    f"Workspace folder does not exist: {folder} - "
+                    "This is non-blocking, workspace will still load"
+                )
+            return
+
+        # Strict mode: validate existence
         if not path.exists():
             raise WorkspaceValidationError(
                 f"Workspace folder does not exist: {folder}"
@@ -166,7 +183,8 @@ class WorkspaceValidator:
 
         # Validate each field
         self.validate_workspace_id(config['id'])
-        self.validate_workspace_folder(config['folder'])
+        # Non-blocking folder validation (warning only, not error)
+        self.validate_workspace_folder(config['folder'], strict=False)
         self.validate_workspace_color(config['color'])
 
         # Additional validation for name (non-empty)

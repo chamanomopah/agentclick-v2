@@ -95,6 +95,36 @@ For new installations, AgentClick V2 will create default configuration files on 
 - `.claude/commands/` - Agent definitions
 - `config/templates.yaml` - Template configurations
 
+### Step 5: Run the Application
+
+AgentClick V2 can be started using main.py:
+
+```bash
+# From the project root directory
+python main.py
+```
+
+**What happens on startup:**
+1. ✅ PyQt6 application initializes
+2. ✅ Workspaces loaded from `config/workspaces.yaml`
+3. ✅ Agents discovered from `.claude/commands/` directories
+4. ✅ Hotkey system starts (Pause, Ctrl+Pause, Ctrl+Shift+Pause)
+5. ✅ UI components initialized (Mini Popup, Detailed Popup)
+6. ✅ Welcome notification displayed
+
+**First Run Experience:**
+If this is your first time running AgentClick V2:
+- A default workspace will be created automatically
+- Configuration will be saved to `config/workspaces.yaml`
+- You'll see a welcome notification with hotkey instructions
+
+**Note for Developers:**
+The `__main__.py` file in `@agentclick-v2/` allows running as a module after proper installation:
+```bash
+# After pip install -e . or setup
+python -m @agentclick-v2
+```
+
 ---
 
 ## Quick Start
@@ -445,7 +475,19 @@ Context: {{context_folder}}
 
 ## Hotkeys & Usage
 
-### Setting Up Hotkeys
+### Default Hotkeys
+
+AgentClick V2 comes with pre-configured global hotkeys:
+
+| Hotkey | Action | Description |
+|--------|--------|-------------|
+| **Pause** | Execute Agent | Execute the current/selected agent |
+| **Ctrl+Pause** | Switch Agent | Cycle through available agents in current workspace |
+| **Ctrl+Shift+Pause** | Show Popup | Open the detailed popup window |
+
+**Note:** These hotkeys work globally once the application is running. If hotkey registration fails (due to permissions or OS restrictions), the application will continue in UI-only mode and show a notification.
+
+### Setting Up Custom Hotkeys
 
 AgentClick V2 supports customizable hotkeys for quick agent access.
 

@@ -1,10 +1,11 @@
 project:
   name: "AgentClick V2"
-  total_stories: 12
+  total_stories: 13
   created_at: "2025-12-29T00:00:00Z"
   current_story: null
 
 stories:
+  0-integration-bootstrap: done
   1-project-structure-core-models: done
   2-workspace-manager: done
   3-dynamic-agent-loader: done
@@ -24,3 +25,8 @@ stories:
 # in-dev - Currently being implemented
 # ready-for-review - Implementation complete, pending review
 # done - Story completed and verified
+#
+# IMPLEMENTATION NOTES:
+# - Story 0 (Integration & Bootstrap) should be implemented LAST
+# - Stories 1-12 must be completed before implementing Story 0
+# - Story 0 creates the main.py entry point that integrates all components

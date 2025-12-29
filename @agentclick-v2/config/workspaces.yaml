@@ -3,19 +3,19 @@ current_workspace: "python"
 workspaces:
   python:
     name: "Python Projects"
-    folder: "C:/python-projects"
+    folder: "C:\\.agent_click_v2"
     emoji: "🐍"
     color: "#0078d4"
     agents: []
   web-dev:
     name: "Web Development"
-    folder: "C:/web-projects"
+    folder: "C:\\.agent_click_v2"
     emoji: "🌐"
     color: "#ff6600"
     agents: []
   docs:
     name: "Documentation"
-    folder: "C:/docs"
+    folder: "C:\\.agent_click_v2\\docs"
     emoji: "📚"
     color: "#00ff00"
     agents: []

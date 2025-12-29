@@ -337,7 +337,8 @@ class WorkspaceManager:
             workspace.name = updates['name']
         if 'folder' in updates:
             new_folder = Path(updates['folder'])
-            self.validator.validate_workspace_folder(new_folder)
+            # Use non-blocking validation (warning only, not error)
+            self.validator.validate_workspace_folder(new_folder, strict=False)
             workspace.folder = new_folder
         if 'emoji' in updates:
             if not updates['emoji']:

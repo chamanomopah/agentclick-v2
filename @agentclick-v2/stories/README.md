@@ -1,7 +1,7 @@
 # AgentClick V2 Stories
 
 **Project:** AgentClick V2
-**Total Stories:** 12
+**Total Stories:** 13
 **Created:** 2025-12-29
 **Status:** backlog
 
@@ -11,7 +11,38 @@
 
 AgentClick V2 transforms the system from 3 hardcoded Python agents into a dynamic, extensible platform supporting the Claude ecosystem structure (`.claude/commands`, `.claude/skills`, `.claude/agents`) with workspace-based context isolation.
 
-**Implementation Order:** Start with Story 1 and proceed sequentially. Stories with no dependencies can be implemented in parallel.
+**Implementation Order:** Start with Story 0 (bootstrap), then Story 1 and proceed sequentially. Stories with no dependencies can be implemented in parallel.
+
+---
+
+## Story 0: Integration & Bootstrap
+
+**User Story:**
+As a user,
+I want a single entry point to launch the AgentClick V2 application,
+so that I can start using the system with a simple command.
+
+**Acceptance Criteria:**
+1. A `main.py` file exists at the project root that initializes the entire system
+2. `main.py` initializes QApplication and sets up the Qt event loop
+3. `main.py` loads and initializes WorkspaceManager with workspaces from config
+4. `main.py` initializes DynamicAgentLoader to discover all agents from `.claude/` structure
+5. `main.py` creates and starts HotkeyProcessor with global hotkey listeners
+6. `main.py` creates MiniPopupV2 and PopupWindowV2 UI components
+7. `main.py` enters the Qt event loop and keeps the application running
+8. The application can be started with `python main.py` or `python -m agentclick_v2`
+
+**Dependencies:** Story 1, Story 2, Story 3, Story 5, Story 6, Story 7, Story 8, Story 9 (all must be complete before integration)
+
+**Estimated Complexity:** medium
+
+**Technical Context:**
+- Entry point at project root (`main.py`)
+- Integrates all components from Stories 1-12
+- PyQt6 application lifecycle management
+- Dependency injection pattern
+- Error handling and first-run setup
+- File locations: `main.py`, `@agentclick-v2/__main__.py`
 
 ---
 
@@ -351,6 +382,10 @@ so that I can upgrade without losing my settings.
 ## Dependency Graph
 
 ```
+Story 0 (Integration & Bootstrap)
+  └─→ DEPENDS ON: Stories 1-9 (all integration points)
+       └─→ FINAL step after all other stories complete
+
 Story 1 (Foundation)
   ├─→ Story 2 (Workspace Manager)
   │     ├─→ Story 7 (Mini Popup)
@@ -382,6 +417,10 @@ Story 9 (Hotkey Processor)
 
 ## Implementation Order
 
+**Phase 0: Bootstrap Preparation (Story 0)**
+- ⚠️ **IMPORTANT:** Story 0 is implemented LAST (after Stories 1-12)
+- Story 0: Integration & Bootstrap (creates main.py entry point)
+
 **Phase 1: Foundation (Stories 1-4)**
 - Story 1: Project Structure & Core Models
 - Story 2: Workspace Manager
@@ -402,6 +441,9 @@ Story 9 (Hotkey Processor)
 - Story 11: Activity Log & Notifications
 - Story 12: Migration Script & Documentation
 
+**Phase 5: Final Integration (Story 0)**
+- Story 0: Integration & Bootstrap ⭐ (implemented LAST)
+
 ---
 
 ## Estimated Timeline
@@ -410,23 +452,32 @@ Story 9 (Hotkey Processor)
 - **Phase 2:** 2 weeks (Execution Engine)
 - **Phase 3:** 2 weeks (User Interface)
 - **Phase 4:** 2 weeks (Integration & Polish)
+- **Phase 5:** 3-5 days (Final Bootstrap)
 
-**Total:** 8 weeks (as specified in PRD)
+**Total:** ~8.5 weeks (as specified in PRD)
 
 ---
 
 ## Next Steps
 
 1. **Review Stories:**
-   - Read through all 12 stories
+   - Read through all 13 stories (including Story 0)
    - Verify dependencies are correct
    - Adjust complexity estimates if needed
+   - ⚠️ **CRITICAL:** Story 0 must be implemented AFTER Stories 1-12
 
 2. **Start Implementation:**
    - Run `/bmad:2-dev-story 1` to begin Story 1
-   - Follow the dependency order
+   - Follow the dependency order (1 → 2 → 3 → ... → 12)
+   - Save Story 0 for the very end (integration & bootstrap)
    - Update status in `status.yaml` as you progress
 
-3. **Track Progress:**
+3. **Final Integration:**
+   - After completing Stories 1-12, implement Story 0
+   - Story 0 creates the main.py entry point that integrates everything
+   - This is when the system becomes runnable as a complete application
+
+4. **Track Progress:**
    - Mark stories as `ready-for-dev`, `in-dev`, `ready-for-review`, `done`
    - Use `status.yaml` for overall progress tracking
+   - Story 0 status should remain `backlog` until all other stories are `done`
