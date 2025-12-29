@@ -1,6 +1,6 @@
 # Story 12: Migration Script & Documentation
 
-Status: in-progress
+Status: done
 
 ## Story
 

@@ -16,7 +16,7 @@ stories:
   9-hotkey-processor-v2: done
   10-configuration-ui-templates-editor: done
   11-activity-log-notifications: done
-  12-migration-script-documentation: in-progress
+  12-migration-script-documentation: done
 
 # STATUS DEFINITIONS:
 # backlog - Story created, not started
