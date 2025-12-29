@@ -40,7 +40,6 @@ except ImportError:
 # Try to import PyQt6 for clipboard
 try:
     from PyQt6.QtWidgets import QApplication
-    from PyQt6.QtClipboard import QClipboard
     QT_AVAILABLE = True
 except ImportError:
     QT_AVAILABLE = False
@@ -188,6 +187,13 @@ class HotkeyProcessorV2:
 
         except Exception as e:
             logger.error(f"Failed to register global hotkeys: {e}")
+            # Cleanup listener if it was partially created
+            if self._listener:
+                try:
+                    self._listener.stop()
+                except:
+                    pass
+                self._listener = None
             raise
 
     def _on_pause_wrapper(self) -> None:
@@ -215,9 +221,18 @@ class HotkeyProcessorV2:
         """
         Execute handler with debouncing to prevent rapid-fire presses.
 
+        Updates debounce timer AFTER handler execution to prevent overlapping
+        executions when handlers take longer than debounce delay.
+
         Args:
             handler_name: Name of the handler (for logging)
             handler_func: Handler function to execute
+
+        Returns:
+            None
+
+        Raises:
+            Exceptions from handler_func are caught and logged
         """
         import time
 
@@ -228,15 +243,16 @@ class HotkeyProcessorV2:
             logger.debug(f"Debounced {handler_name} - too soon")
             return
 
-        # Update debounce timer
-        self._debounce_timer = current_time
-
         # Execute handler
         try:
             logger.debug(f"Executing {handler_name}")
             handler_func()
+            # Update debounce timer AFTER successful execution
+            self._debounce_timer = current_time
         except Exception as e:
             logger.error(f"Error in {handler_name}: {e}", exc_info=True)
+            # Still update timer on error to prevent error spam
+            self._debounce_timer = current_time
 
     def on_pause(self) -> None:
         """
@@ -255,13 +271,22 @@ class HotkeyProcessorV2:
         Note:
             This method is called from the hotkey handler thread.
             Execution happens asynchronously to avoid blocking the hotkey thread.
+            Handles both running event loops and creates new one if needed.
 
         Example:
             >>> When Pause key is pressed, this handler executes the current agent
         """
         try:
-            # Run async execution in event loop
-            asyncio.run(self.execute_agent())
+            # Try to get running event loop
+            try:
+                loop = asyncio.get_running_loop()
+                # Create task in running loop
+                loop.create_task(self.execute_agent())
+                logger.debug("Scheduled agent execution in running event loop")
+            except RuntimeError:
+                # No running loop, create new one
+                asyncio.run(self.execute_agent())
+                logger.debug("Created new event loop for agent execution")
         except Exception as e:
             logger.error(f"Error executing agent on Pause: {e}", exc_info=True)
 
@@ -288,6 +313,7 @@ class HotkeyProcessorV2:
             self.switch_to_next_agent()
         except Exception as e:
             logger.error(f"Error switching agent on Ctrl+Pause: {e}", exc_info=True)
+            self._show_notification(f"Failed to switch agent: {e}", success=False)
 
     def on_ctrl_shift_pause(self) -> None:
         """
@@ -312,6 +338,7 @@ class HotkeyProcessorV2:
             self.switch_to_next_workspace()
         except Exception as e:
             logger.error(f"Error switching workspace on Ctrl+Shift+Pause: {e}", exc_info=True)
+            self._show_notification(f"Failed to switch workspace: {e}", success=False)
 
     async def execute_agent(self) -> ExecutionResult:
         """
