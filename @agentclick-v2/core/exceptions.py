@@ -223,3 +223,21 @@ class SDKConnectionError(Exception):
         ...     print(f"SDK connection failed: {e}")
     """
     pass
+
+
+class MigrationError(Exception):
+    """
+    Base exception for all migration-related errors.
+
+    This exception is raised when migration from V1 to V2 fails for any reason.
+
+    Attributes:
+        message: Error message describing what went wrong
+
+    Example:
+        >>> try:
+        ...     migrator.migrate()
+        ... except MigrationError as e:
+        ...     print(f"Migration failed: {e}")
+    """
+    pass
