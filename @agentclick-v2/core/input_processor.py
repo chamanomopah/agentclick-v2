@@ -79,14 +79,16 @@ class InputProcessor:
 
     Attributes:
         clipboard: QClipboard instance for reading clipboard content
+        notification_manager: Optional NotificationManager for progress notifications
     """
 
-    def __init__(self, clipboard=None):
+    def __init__(self, clipboard=None, notification_manager=None):
         """
         Initialize InputProcessor
 
         Args:
             clipboard: Optional QClipboard instance. If None, uses QApplication.clipboard()
+            notification_manager: Optional NotificationManager for progress notifications
 
         Raises:
             RuntimeError: If QApplication is not available and no clipboard provided
@@ -100,6 +102,9 @@ class InputProcessor:
             if app is None:
                 raise RuntimeError("QApplication instance not found. Create QApplication first.")
             self.clipboard = app.clipboard()
+
+        # Store notification manager for progress notifications (Story 11 - AC #6)
+        self.notification_manager = notification_manager
 
     async def detect_input_type(self) -> InputType:
         """
@@ -250,6 +255,14 @@ class InputProcessor:
         total = len(file_paths)
 
         for idx, file_path in enumerate(file_paths, start=1):
+            # Show progress notification (Story 11 - AC #6)
+            if self.notification_manager:
+                self.notification_manager.show_progress(
+                    current=idx,
+                    total=total,
+                    message="Processing file"
+                )
+
             print(f"Processing file {idx}/{total}...")
 
             try:
@@ -260,6 +273,13 @@ class InputProcessor:
                 logger.error(f"Error processing file {file_path}: {e}")
                 results.append(None)
                 print(f"❌ Error: {Path(file_path).name} - {e}")
+
+        # Show final completion notification (Story 11 - AC #6)
+        if self.notification_manager:
+            self.notification_manager.show_info(
+                title="AgentClick V2",
+                message=f"✅ Complete: {total} files processed"
+            )
 
         print(f"✅ Complete: {total} files processed")
         return results

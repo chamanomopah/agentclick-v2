@@ -51,6 +51,8 @@ from core.input_processor import InputProcessor, InputType
 from models.workspace import Workspace
 from models.virtual_agent import VirtualAgent
 from models.execution_result import ExecutionResult
+from utils.logger_v2 import LoggerV2, LogCategory
+from utils.notification_manager import NotificationManager, NotificationType
 
 
 logger = logging.getLogger(__name__)
@@ -99,7 +101,9 @@ class HotkeyProcessorV2:
         workspace_manager: WorkspaceManager,
         agent_executor: VirtualAgentExecutor,
         input_processor: InputProcessor,
-        mini_popup
+        mini_popup,
+        activity_logger: Optional[LoggerV2] = None,
+        notification_manager: Optional[NotificationManager] = None
     ):
         """
         Initialize HotkeyProcessorV2 with required dependencies (AC: #1, #2, #3, #5).
@@ -109,6 +113,8 @@ class HotkeyProcessorV2:
             agent_executor: VirtualAgentExecutor instance for agent execution
             input_processor: InputProcessor instance for input detection and processing
             mini_popup: MiniPopupV2 instance for display updates
+            activity_logger: Optional LoggerV2 instance for activity logging
+            notification_manager: Optional NotificationManager instance for notifications
 
         Raises:
             RuntimeError: If pynput is not available
@@ -125,6 +131,14 @@ class HotkeyProcessorV2:
         self.agent_executor = agent_executor
         self.input_processor = input_processor
         self.mini_popup = mini_popup
+
+        # Activity logger and notification manager (Story 11 integration)
+        self.activity_logger = activity_logger
+        self.notification_manager = notification_manager
+
+        # Pass notification_manager to input_processor for progress notifications (Story 11 - AC #6)
+        if self.input_processor and self.notification_manager:
+            self.input_processor.notification_manager = self.notification_manager
 
         # Debounce timer to prevent rapid-fire hotkey presses
         self._debounce_timer: float = 0
@@ -184,6 +198,13 @@ class HotkeyProcessorV2:
             self._listener.start()
 
             logger.info(f"Global hotkeys registered: {list(hotkeys.keys())}")
+
+            # Log "Agent ready" when hotkey system is ready (Story 11 - AC #2)
+            if self.activity_logger:
+                self.activity_logger.add_log_entry(
+                    category=LogCategory.AGENT_READY,
+                    message="Agent ready"
+                )
 
         except Exception as e:
             logger.error(f"Failed to register global hotkeys: {e}")
@@ -351,6 +372,7 @@ class HotkeyProcessorV2:
         4. Execute agent using agent_executor.execute()
         5. Copy result to clipboard
         6. Show notification
+        7. Log activity (Story 11)
 
         Returns:
             ExecutionResult with output, status, and metadata
@@ -373,6 +395,14 @@ class HotkeyProcessorV2:
 
             if processed_input is None:
                 logger.warning("No input available for processing")
+
+                # Log error (Story 11)
+                if self.activity_logger:
+                    self.activity_logger.add_log_entry(
+                        category=LogCategory.ERROR,
+                        message="No input available for processing"
+                    )
+
                 return ExecutionResult(
                     output="No input available",
                     status="error",
@@ -383,6 +413,14 @@ class HotkeyProcessorV2:
             workspace = self.workspace_manager.get_current_workspace()
             if workspace is None:
                 logger.error("No current workspace")
+
+                # Log error (Story 11)
+                if self.activity_logger:
+                    self.activity_logger.add_log_entry(
+                        category=LogCategory.ERROR,
+                        message="No current workspace"
+                    )
+
                 return ExecutionResult(
                     output="No workspace selected",
                     status="error",
@@ -392,10 +430,25 @@ class HotkeyProcessorV2:
             agent = workspace.agents[workspace.current_agent_index] if workspace.agents else None
             if agent is None:
                 logger.error(f"No agents in workspace {workspace.id}")
+
+                # Log error (Story 11)
+                if self.activity_logger:
+                    self.activity_logger.add_log_entry(
+                        category=LogCategory.ERROR,
+                        message=f"No agents in workspace {workspace.name}"
+                    )
+
                 return ExecutionResult(
                     output=f"No agents enabled in workspace {workspace.name}",
                     status="error",
                     metadata={"error": "No agents available"}
+                )
+
+            # Log processing start (Story 11)
+            if self.activity_logger:
+                self.activity_logger.add_log_entry(
+                    category=LogCategory.PROCESSING_START,
+                    message=f"Processing {agent.id}..."
                 )
 
             # Step 4: Execute agent (AC: #1)
@@ -411,17 +464,67 @@ class HotkeyProcessorV2:
                 self._copy_to_clipboard(result.output)
                 logger.info(f"Copied result to clipboard ({len(result.output)} chars)")
 
-            # Step 6: Show notification
-            self._show_notification(
-                f"Agent {agent.name} executed",
-                success=(result.status == "success")
-            )
+                # Log clipboard copy (Story 11)
+                if self.activity_logger:
+                    self.activity_logger.add_log_entry(
+                        category=LogCategory.CLIPBOARD_COPY,
+                        message=f"Copied to clipboard ({len(result.output)} chars)"
+                    )
+
+            # Step 6: Log completion (Story 11)
+            if self.activity_logger:
+                if result.status == "success":
+                    self.activity_logger.add_log_entry(
+                        category=LogCategory.COMPLETE,
+                        message=f"Complete ({len(result.output)} chars)"
+                    )
+                else:
+                    self.activity_logger.add_log_entry(
+                        category=LogCategory.ERROR,
+                        message=f"Execution failed: {result.metadata.get('error', 'Unknown error')}"
+                    )
+
+            # Step 7: Show notification (Story 11)
+            if self.notification_manager:
+                if result.status == "success":
+                    self.notification_manager.show_success(
+                        title="AgentClick V2",
+                        message=f"{agent.name} executed successfully"
+                    )
+                else:
+                    error_msg = result.metadata.get('error', 'Unknown error')
+                    self.notification_manager.show_error(
+                        title="AgentClick V2 - Error",
+                        message=f"Failed to execute {agent.name}: {error_msg}"
+                    )
+            else:
+                # Fallback to old notification method
+                self._show_notification(
+                    f"Agent {agent.name} executed",
+                    success=(result.status == "success")
+                )
 
             return result
 
         except Exception as e:
             logger.error(f"Error executing agent: {e}", exc_info=True)
-            self._show_notification(f"Agent execution failed: {e}", success=False)
+
+            # Log error (Story 11)
+            if self.activity_logger:
+                self.activity_logger.add_log_entry(
+                    category=LogCategory.ERROR,
+                    message=f"Execution error: {str(e)}"
+                )
+
+            # Show error notification (Story 11)
+            if self.notification_manager:
+                self.notification_manager.show_error(
+                    title="AgentClick V2 - Error",
+                    message=f"Agent execution failed: {str(e)}"
+                )
+            else:
+                self._show_notification(f"Agent execution failed: {e}", success=False)
+
             return ExecutionResult(
                 output=f"Execution error: {e}",
                 status="error",
@@ -548,6 +651,14 @@ class HotkeyProcessorV2:
             self.mini_popup.update_display(workspace, next_agent)
 
             logger.info(f"Switched to agent {next_agent.name} in workspace {workspace.name}")
+
+            # Log agent switch (Story 11)
+            if self.activity_logger:
+                self.activity_logger.add_log_entry(
+                    category=LogCategory.AGENT_SWITCH,
+                    message=f"Switched to {next_agent.name}"
+                )
+
             self._show_notification(f"Agent: {next_agent.name}")
 
         except Exception as e:
@@ -593,6 +704,14 @@ class HotkeyProcessorV2:
                 self.mini_popup.update_display(new_workspace, current_agent)
 
                 logger.info(f"Switched to workspace {new_workspace.name}")
+
+                # Log workspace switch (Story 11)
+                if self.activity_logger:
+                    self.activity_logger.add_log_entry(
+                        category=LogCategory.WORKSPACE_SWITCH,
+                        message=f"Switched to {new_workspace.name}"
+                    )
+
                 self._show_notification(f"Workspace: {new_workspace.name} {new_workspace.emoji}")
 
         except Exception as e:
@@ -617,13 +736,25 @@ class HotkeyProcessorV2:
             >>> # Text is now in clipboard
         """
         if not QT_AVAILABLE:
-            logger.warning("PyQt6 not available for clipboard operations")
+            logger.error("PyQt6 not available for clipboard operations")
+            # Show error notification to user
+            if self.notification_manager:
+                self.notification_manager.show_error(
+                    title="AgentClick V2 - Error",
+                    message="Failed to copy to clipboard: PyQt6 not available"
+                )
             return
 
         try:
             app = QApplication.instance()
             if app is None:
-                logger.warning("QApplication instance not found")
+                logger.error("QApplication instance not found")
+                # Show error notification to user
+                if self.notification_manager:
+                    self.notification_manager.show_error(
+                        title="AgentClick V2 - Error",
+                        message="Failed to copy to clipboard: QApplication not available"
+                    )
                 return
 
             clipboard = app.clipboard()
@@ -633,6 +764,12 @@ class HotkeyProcessorV2:
 
         except Exception as e:
             logger.error(f"Failed to copy to clipboard: {e}")
+            # Show error notification to user
+            if self.notification_manager:
+                self.notification_manager.show_error(
+                    title="AgentClick V2 - Error",
+                    message=f"Failed to copy to clipboard: {str(e)}"
+                )
 
     def _show_notification(self, message: str, success: bool = True) -> None:
         """

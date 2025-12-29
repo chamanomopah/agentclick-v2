@@ -12,7 +12,7 @@ from PyQt6.QtWidgets import (
     QTabWidget, QGroupBox, QTableWidget, QPushButton,
     QTableWidgetItem, QHeaderView, QLabel, QAbstractItemView,
     QDialog, QMessageBox, QTextEdit, QListWidget, QListWidgetItem,
-    QProgressDialog, QApplication
+    QProgressDialog, QApplication, QComboBox, QFileDialog
 )
 from PyQt6.QtCore import Qt, pyqtSignal, QTimer
 from PyQt6.QtGui import QColor, QShortcut, QKeySequence, QFont, QTextCharFormat, QSyntaxHighlighter
@@ -154,21 +154,247 @@ class DetailedPopupV2(QMainWindow):
 
     def _create_activity_tab(self) -> None:
         """
-        Create the Activity tab (placeholder for Story 11).
+        Create the Activity tab with log display and controls.
 
-        This tab will show agent activity log in the future.
+        This tab shows:
+        - Filter dropdown (All, Info, Success, Error, Warning)
+        - Log display (QListWidget)
+        - Clear Log and Export Log buttons
+
+        Activity Log (Story 11)
         """
+        from utils.logger_v2 import LoggerV2, LogLevel
+
         activity_widget = QWidget()
         layout = QVBoxLayout(activity_widget)
+        layout.setSpacing(10)
 
-        # Placeholder label
-        placeholder_label = QLabel("Activity log coming soon (Story 11)")
-        placeholder_label.setAlignment(Qt.AlignmentFlag.AlignCenter)
-        placeholder_label.setStyleSheet("color: #888; font-size: 14pt;")
-        layout.addWidget(placeholder_label)
+        # === Filter dropdown ===
+        filter_layout = QHBoxLayout()
+        filter_label = QLabel("Filter:")
+        self._activity_filter_combo = QComboBox()
+        self._activity_filter_combo.setObjectName("activity_filter_combo")
+        self._activity_filter_combo.addItems(["All", "Info", "Success", "Error", "Warning"])
+        self._activity_filter_combo.currentTextChanged.connect(self._on_activity_filter_changed)
+        filter_layout.addWidget(filter_label)
+        filter_layout.addWidget(self._activity_filter_combo)
+        filter_layout.addStretch()
+        layout.addLayout(filter_layout)
+
+        # === Log display ===
+        self._activity_log_list = QListWidget()
+        self._activity_log_list.setObjectName("activity_log_list")
+        self._activity_log_list.setWordWrap(True)
+        # Set monospace font for log
+        font = QFont()
+        font.setFamily("Consolas")
+        font.setPointSize(9)
+        self._activity_log_list.setFont(font)
+        layout.addWidget(self._activity_log_list)
+
+        # === Action buttons ===
+        buttons_layout = QHBoxLayout()
+        buttons_layout.setSpacing(10)
+
+        self._clear_log_button = QPushButton("Clear Log")
+        self._clear_log_button.setObjectName("clear_log_button")
+        self._clear_log_button.clicked.connect(self._on_clear_activity_log)
+        buttons_layout.addWidget(self._clear_log_button)
+
+        self._export_log_button = QPushButton("Export Log")
+        self._export_log_button.setObjectName("export_log_button")
+        self._export_log_button.clicked.connect(self._on_export_activity_log)
+        buttons_layout.addWidget(self._export_log_button)
+
+        buttons_layout.addStretch()
+        layout.addLayout(buttons_layout)
 
         # Add tab (AC: #1 - 📋 Activity)
         self._tab_widget.addTab(activity_widget, "📋 Activity")
+
+        # Initialize logger
+        self._activity_logger = LoggerV2()
+
+        # Connect logger signals
+        self._activity_logger.log_entry_added.connect(self._on_log_entry_added)
+        self._activity_logger.log_cleared.connect(self._on_log_cleared)
+
+        # Log that activity viewer is ready (not "Agent ready" - that should be logged at app startup)
+        from utils.logger_v2 import LogCategory
+        self._activity_logger.add_log_entry(
+            category=LogCategory.INFO,
+            message="Activity log viewer ready"
+        )
+
+    def _on_activity_filter_changed(self, filter_text: str) -> None:
+        """
+        Handle activity filter dropdown change.
+
+        Args:
+            filter_text: Selected filter text
+        """
+        from utils.logger_v2 import LogLevel
+
+        # Map filter text to log level
+        level_map = {
+            "All": None,
+            "Info": LogLevel.INFO,
+            "Success": LogLevel.SUCCESS,
+            "Error": LogLevel.ERROR,
+            "Warning": LogLevel.WARNING
+        }
+
+        level = level_map.get(filter_text)
+        self._refresh_activity_log_display(level)
+
+    def _refresh_activity_log_display(self, level_filter=None) -> None:
+        """
+        Refresh activity log display with optional level filter.
+
+        Args:
+            level_filter: Optional log level filter
+        """
+        if not hasattr(self, '_activity_logger'):
+            return
+
+        # Get formatted entries (with optional filter)
+        formatted_entries = self._activity_logger.get_formatted_entries(filter_level=level_filter)
+
+        # Clear current display
+        self._activity_log_list.clear()
+
+        # Map level to color
+        from utils.logger_v2 import LEVEL_HIERARCHY
+        color_map = {
+            'SUCCESS': '#00aa00',  # Green
+            'ERROR': '#cc0000',    # Red
+            'INFO': '#0066cc',     # Blue
+            'WARNING': '#cc6600',  # Orange
+            'DEBUG': '#666666',    # Gray
+        }
+
+        # Get raw entries to determine colors
+        raw_entries = self._activity_logger.get_filtered_entries(level=level_filter)
+
+        # Add entries with colors (already in newest-first order)
+        for i, formatted_text in enumerate(formatted_entries):
+            # Get corresponding raw entry to determine color
+            if i < len(raw_entries):
+                level = raw_entries[i].get('level', 'INFO')
+                color = color_map.get(level, '#000000')
+
+                item = QListWidgetItem(formatted_text)
+                item.setForeground(QColor(color))
+                self._activity_log_list.addItem(item)
+            else:
+                # Fallback if no raw entry
+                self._activity_log_list.addItem(formatted_text)
+
+    def _on_log_entry_added(self, entry: dict) -> None:
+        """
+        Handle new log entry added signal.
+
+        Args:
+            entry: Log entry dictionary
+        """
+        # Add new entry to display (if it passes current filter)
+        from utils.logger_v2 import LogLevel
+
+        # Get current filter
+        current_filter_text = self._activity_filter_combo.currentText()
+        level_map = {
+            "All": None,
+            "Info": LogLevel.INFO,
+            "Success": LogLevel.SUCCESS,
+            "Error": LogLevel.ERROR,
+            "Warning": LogLevel.WARNING
+        }
+        current_filter = level_map.get(current_filter_text)
+
+        # Check if entry passes filter
+        if current_filter:
+            from utils.logger_v2 import LEVEL_HIERARCHY
+            entry_level = LEVEL_HIERARCHY.get(entry.get('level'), 0)
+            min_level = LEVEL_HIERARCHY.get(current_filter, 0)
+            if entry_level < min_level:
+                return  # Don't show this entry
+
+        # Map level to color
+        level = entry.get('level')
+        color_map = {
+            'SUCCESS': '#00aa00',  # Green
+            'ERROR': '#cc0000',    # Red
+            'INFO': '#0066cc',     # Blue
+            'WARNING': '#cc6600',  # Orange
+            'DEBUG': '#666666',    # Gray
+        }
+        color = color_map.get(level, '#000000')
+
+        # Format entry
+        from datetime import datetime
+        try:
+            dt = datetime.fromisoformat(entry['timestamp'])
+            time_str = dt.strftime("%H:%M:%S")
+        except:
+            time_str = entry['timestamp'][:8]
+
+        formatted_line = f"{entry['emoji']} {time_str} - {entry['message']}"
+
+        # Add item with color at the beginning (newest first)
+        item = QListWidgetItem(formatted_line)
+        item.setForeground(QColor(color))
+        self._activity_log_list.insertItem(0, item)
+
+    def _on_log_cleared(self) -> None:
+        """Handle log cleared signal."""
+        self._activity_log_list.clear()
+
+    def _on_clear_activity_log(self) -> None:
+        """Handle Clear Log button click."""
+        reply = QMessageBox.question(
+            self,
+            "Clear Activity Log",
+            "Are you sure you want to clear the activity log?\n\n"
+            "This action cannot be undone.",
+            QMessageBox.StandardButton.Yes | QMessageBox.StandardButton.No,
+            QMessageBox.StandardButton.No
+        )
+
+        if reply == QMessageBox.StandardButton.Yes:
+            self._activity_logger.clear_log()
+
+    def _on_export_activity_log(self) -> None:
+        """Handle Export Log button click."""
+        from PyQt6.QtWidgets import QFileDialog
+
+        # Ask for save location
+        file_path, selected_filter = QFileDialog.getSaveFileName(
+            self,
+            "Export Activity Log",
+            "activity_log.txt",
+            "Text Files (*.txt);;JSON Files (*.json);;All Files (*)"
+        )
+
+        if file_path:
+            try:
+                # Export based on selected filter or file extension
+                if "JSON" in selected_filter or file_path.endswith('.json'):
+                    self._activity_logger.export_to_json(file_path)
+                else:
+                    self._activity_logger.export_to_text(file_path)
+
+                QMessageBox.information(
+                    self,
+                    "Export Complete",
+                    f"Activity log exported to:\n{file_path}"
+                )
+
+            except Exception as e:
+                QMessageBox.critical(
+                    self,
+                    "Export Failed",
+                    f"Failed to export activity log:\n{str(e)}"
+                )
 
     def _create_config_tab(self) -> None:
         """
