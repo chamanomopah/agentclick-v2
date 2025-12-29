@@ -1,0 +1,21 @@
+version: "2.0"
+current_workspace: "python"
+workspaces:
+  python:
+    name: "Python Projects"
+    folder: "C:/python-projects"
+    emoji: "🐍"
+    color: "#0078d4"
+    agents: []
+  web-dev:
+    name: "Web Development"
+    folder: "C:/web-projects"
+    emoji: "🌐"
+    color: "#ff6600"
+    agents: []
+  docs:
+    name: "Documentation"
+    folder: "C:/docs"
+    emoji: "📚"
+    color: "#00ff00"
+    agents: []
