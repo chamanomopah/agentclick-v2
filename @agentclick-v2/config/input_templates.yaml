@@ -1,0 +1,28 @@
+version: "2.0"
+templates:
+  verify-python:
+    template: |
+      File: {{input}}
+      Context: {{context_folder}}
+      Focus: {{focus_file}}
+    enabled: true
+
+  diagnose:
+    template: |
+      Problem: {{input}}
+      Analyzing: {{context_folder}}
+    enabled: true
+
+  ux-ui-improver:
+    template: |
+      Request: {{input}}
+      Project: {{context_folder}}
+      Current File: {{focus_file}}
+    enabled: true
+
+  review-code:
+    template: |
+      Review: {{input}}
+      Context: {{context_folder}}
+      Focus File: {{focus_file}}
+    enabled: true

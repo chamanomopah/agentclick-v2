@@ -6,9 +6,9 @@ project:
 
 stories:
   1-project-structure-core-models: done
-  2-workspace-manager: backlog
-  3-dynamic-agent-loader: backlog
-  4-template-engine: backlog
+  2-workspace-manager: done
+  3-dynamic-agent-loader: done
+  4-template-engine: done
   5-virtual-agent-executor: backlog
   6-enhanced-input-processor: backlog
   7-mini-popup-v2: backlog

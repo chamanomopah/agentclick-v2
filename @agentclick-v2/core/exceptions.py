@@ -1,9 +1,8 @@
 """
-Custom exceptions for workspace management.
+Custom exceptions for AgentClick V2.
 
-This module defines the exception hierarchy used by the WorkspaceManager
-and related components. All exceptions inherit from WorkspaceError for
-easy catching of workspace-related errors.
+This module defines the exception hierarchy used throughout the
+AgentClick V2 system, including workspace and template-related errors.
 """
 
 
@@ -95,6 +94,83 @@ class WorkspaceValidationError(WorkspaceError):
         >>> try:
         ...     manager.add_workspace(invalid_config)
         ... except WorkspaceValidationError as e:
+        ...     print(f"Validation error: {e}")
+    """
+
+    def __init__(self, message: str):
+        """
+        Initialize the exception with a validation error message.
+
+        Args:
+            message: Description of the validation error
+        """
+        super().__init__(message)
+
+
+class TemplateError(Exception):
+    """
+    Base exception for all template-related errors.
+
+    This exception can be used to catch any template-related error.
+    All specific template exceptions inherit from this class.
+
+    Attributes:
+        message: Error message describing what went wrong
+
+    Example:
+        >>> try:
+        ...     # template operations
+        ... except TemplateError as e:
+        ...     print(f"Template error: {e}")
+    """
+    pass
+
+
+class TemplateSyntaxError(TemplateError):
+    """
+    Exception raised when template syntax is invalid.
+
+    This exception is raised when:
+    - Template has unclosed {{ }} brackets
+    - Template has malformed expressions
+    - Other syntax errors are detected
+
+    Attributes:
+        message: Error message describing the syntax error
+
+    Example:
+        >>> try:
+        ...     engine.validate_template('Invalid {{template')
+        ... except TemplateSyntaxError as e:
+        ...     print(f"Syntax error: {e}")
+    """
+
+    def __init__(self, message: str):
+        """
+        Initialize the exception with a syntax error message.
+
+        Args:
+            message: Description of the syntax error
+        """
+        super().__init__(message)
+
+
+class TemplateValidationError(TemplateError):
+    """
+    Exception raised when template validation fails.
+
+    This exception is raised when:
+    - Template contains invalid variables
+    - Template structure is incorrect
+    - Other validation rules are violated
+
+    Attributes:
+        message: Error message describing the validation error
+
+    Example:
+        >>> try:
+        ...     engine.validate_template(invalid_template)
+        ... except TemplateValidationError as e:
         ...     print(f"Validation error: {e}")
     """
 
