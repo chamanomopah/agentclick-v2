@@ -182,3 +182,44 @@ class TemplateValidationError(TemplateError):
             message: Description of the validation error
         """
         super().__init__(message)
+
+
+class AgentExecutionError(Exception):
+    """
+    Base exception for agent execution errors.
+
+    This exception is raised when agent execution fails for any reason
+    other than SDK connection issues.
+
+    Attributes:
+        message: Error message describing what went wrong
+
+    Example:
+        >>> try:
+        ...     await executor.execute(agent, input_text, workspace)
+        ... except AgentExecutionError as e:
+        ...     print(f"Execution error: {e}")
+    """
+    pass
+
+
+class SDKConnectionError(Exception):
+    """
+    Exception raised when connection to Claude SDK fails.
+
+    This exception is raised when:
+    - SDK is not available
+    - Network connection fails
+    - SDK API returns an error
+    - Authentication fails
+
+    Attributes:
+        message: Error message describing the connection issue
+
+    Example:
+        >>> try:
+        ...     await executor.execute(agent, input_text, workspace)
+        ... except SDKConnectionError as e:
+        ...     print(f"SDK connection failed: {e}")
+    """
+    pass

@@ -12,11 +12,14 @@ from .exceptions import (
     WorkspaceValidationError,
     TemplateError,
     TemplateSyntaxError,
-    TemplateValidationError
+    TemplateValidationError,
+    AgentExecutionError,
+    SDKConnectionError
 )
 from .workspace_validator import WorkspaceValidator
 from .workspace_manager import WorkspaceManager
 from .template_engine import TemplateEngine, ValidationResult
+from .agent_executor import VirtualAgentExecutor
 
 __all__ = [
     "WorkspaceError",
@@ -26,8 +29,11 @@ __all__ = [
     "TemplateError",
     "TemplateSyntaxError",
     "TemplateValidationError",
+    "AgentExecutionError",
+    "SDKConnectionError",
     "WorkspaceValidator",
     "WorkspaceManager",
     "TemplateEngine",
     "ValidationResult",
+    "VirtualAgentExecutor",
 ]
