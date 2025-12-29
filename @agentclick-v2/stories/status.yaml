@@ -10,7 +10,7 @@ stories:
   3-dynamic-agent-loader: done
   4-template-engine: done
   5-virtual-agent-executor: done
-  6-enhanced-input-processor: backlog
+  6-enhanced-input-processor: done
   7-mini-popup-v2: backlog
   8-detailed-popup-workspaces-tab: backlog
   9-hotkey-processor-v2: backlog

@@ -20,6 +20,7 @@ from .workspace_validator import WorkspaceValidator
 from .workspace_manager import WorkspaceManager
 from .template_engine import TemplateEngine, ValidationResult
 from .agent_executor import VirtualAgentExecutor
+from .input_processor import InputProcessor, InputType
 
 __all__ = [
     "WorkspaceError",
@@ -36,4 +37,6 @@ __all__ = [
     "TemplateEngine",
     "ValidationResult",
     "VirtualAgentExecutor",
+    "InputProcessor",
+    "InputType",
 ]
