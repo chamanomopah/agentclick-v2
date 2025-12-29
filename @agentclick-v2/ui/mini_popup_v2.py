@@ -5,9 +5,10 @@ This module provides the MiniPopupV2 widget which displays the current workspace
 and agent in a compact 80x60px popup format with emoji, name, and type icon.
 """
 import logging
-from PyQt6.QtWidgets import QWidget, QLabel, QHBoxLayout
-from PyQt6.QtCore import Qt
 from typing import Optional
+from PyQt6.QtWidgets import QWidget, QLabel, QHBoxLayout
+from PyQt6.QtCore import Qt, pyqtSignal
+from PyQt6.QtGui import QMouseEvent
 
 from models.workspace import Workspace
 from models.virtual_agent import VirtualAgent
@@ -26,6 +27,9 @@ class MiniPopupV2(QWidget):
 
     The background color matches the workspace color for visual context.
 
+    Signals:
+        workspace_switch_requested: Emitted when double-click to switch workspace
+
     Attributes:
         _workspace_emoji_label: QLabel showing workspace emoji
         _agent_name_label: QLabel showing agent name (truncated)
@@ -36,6 +40,10 @@ class MiniPopupV2(QWidget):
         >>> popup.update_display(workspace, agent)
         >>> popup.show()
     """
+
+    # Signal emitted when double-click to switch workspace (AC: #5)
+    # This signal should be connected to: workspace_manager.switch_to_next_workspace
+    workspace_switch_requested = pyqtSignal()
 
     # Agent type to emoji mapping
     AGENT_TYPE_ICONS = {
@@ -208,3 +216,23 @@ class MiniPopupV2(QWidget):
 
         # Truncate and add ellipsis
         return name[:self.MAX_AGENT_NAME_LENGTH - 3] + "..."
+
+    def mouseDoubleClickEvent(self, event: QMouseEvent) -> None:
+        """
+        Handle mouse double-click event (AC: #5).
+
+        Emits workspace_switch_requested signal to trigger workspace switching.
+
+        Args:
+            event: Mouse double-click event
+
+        Example:
+            >>> When user double-clicks the mini popup, this method is called
+            >>> and emits the workspace_switch_requested signal
+        """
+        super().mouseDoubleClickEvent(event)
+
+        # Emit signal to request workspace switch (AC: #5)
+        self.workspace_switch_requested.emit()
+
+        logger.info("Mini popup double-clicked - workspace switch requested")

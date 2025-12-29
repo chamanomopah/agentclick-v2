@@ -187,6 +187,42 @@ class WorkspaceManager:
         self.current_workspace_id = workspace_id
         self._persist_state()
 
+    def switch_to_next_workspace(self) -> None:
+        """
+        Switch to the next workspace in the list.
+
+        Cycles through workspaces in order. If at the end, wraps to the beginning.
+        Raises an error if there are no workspaces.
+
+        Raises:
+            ValueError: If there are no workspaces
+
+        Example:
+            >>> manager.switch_to_next_workspace()
+            >>> # If current is "python", switches to next workspace
+        """
+        workspace_list = self.list_workspaces()
+        if len(workspace_list) == 0:
+            raise ValueError("No workspaces available to switch to")
+
+        if len(workspace_list) == 1:
+            # Only one workspace, no need to switch
+            return
+
+        # Find current workspace index
+        current_index = -1
+        for i, ws in enumerate(workspace_list):
+            if ws.id == self.current_workspace_id:
+                current_index = i
+                break
+
+        # Calculate next index (wrap to beginning if at end)
+        next_index = (current_index + 1) % len(workspace_list)
+
+        # Switch to next workspace
+        next_workspace = workspace_list[next_index]
+        self.switch_workspace(next_workspace.id)
+
     def get_current_workspace(self) -> Optional[Workspace]:
         """
         Get the currently active workspace.
