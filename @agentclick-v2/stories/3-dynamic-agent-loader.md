@@ -1,6 +1,6 @@
 # Story 3: Dynamic Agent Loader
 
-Status: backlog
+Status: review
 
 ## Story
 
@@ -18,43 +18,43 @@ so that users don't need to manually configure agents.
 
 ## Tasks / Subtasks
 
-- [ ] Implement DynamicAgentLoader class (AC: #1, #2, #3, #5)
-  - [ ] Create `core/agent_loader.py`
-  - [ ] Implement __init__ with commands_dir, skills_dir, agents_dir parameters
-  - [ ] Implement scan_all() async method
-  - [ ] Implement scan_commands() async method
-  - [ ] Implement scan_skills() async method
-  - [ ] Implement scan_custom_agents() async method
-  - [ ] Implement create_virtual_agent() helper method
+- [x] Implement DynamicAgentLoader class (AC: #1, #2, #3, #5)
+  - [x] Create `core/agent_loader.py`
+  - [x] Implement __init__ with commands_dir, skills_dir, agents_dir parameters
+  - [x] Implement scan_all() async method
+  - [x] Implement scan_commands() async method
+  - [x] Implement scan_skills() async method
+  - [x] Implement scan_custom_agents() async method
+  - [x] Implement create_virtual_agent() helper method
 
-- [ ] Implement YAML frontmatter extraction (AC: #4)
-  - [ ] Create extract_frontmatter() function
-  - [ ] Parse YAML between --- delimiters
-  - [ ] Handle missing frontmatter gracefully
-  - [ ] Extract common metadata fields (id, name, description, version, type, tools)
+- [x] Implement YAML frontmatter extraction (AC: #4)
+  - [x] Create extract_frontmatter() function
+  - [x] Parse YAML between --- delimiters
+  - [x] Handle missing frontmatter gracefully
+  - [x] Extract common metadata fields (id, name, description, version, type, tools)
 
-- [ ] Implement metadata caching (AC: #5)
-  - [ ] Add _metadata_cache dict to store parsed metadata
-  - [ ] Implement cache invalidation on file modification
-  - [ ] Implement get_cached_metadata() method
-  - [ ] Add cache size limits to prevent memory bloat
+- [x] Implement metadata caching (AC: #5)
+  - [x] Add _metadata_cache dict to store parsed metadata
+  - [x] Implement cache invalidation on file modification
+  - [x] Implement get_cached_metadata() method
+  - [x] Add cache size limits to prevent memory bloat
 
-- [ ] Implement lazy loading optimization (AC: #5)
-  - [ ] Load only metadata initially
-  - [ ] Load full .md content on first access
-  - [ ] Implement load_content() in VirtualAgent to read on demand
+- [x] Implement lazy loading optimization (AC: #5)
+  - [x] Load only metadata initially
+  - [x] Load full .md content on first access
+  - [x] Implement load_content() in VirtualAgent to read on demand
 
-- [ ] Create example .claude structure (AC: #1, #2, #3)
-  - [ ] Create `.claude/commands/` directory
-  - [ ] Create `.claude/skills/` directory
-  - [ ] Create `.claude/agents/` directory
-  - [ ] Create example commands: diagnose.md, verify-python.md, review-code.md
-  - [ ] Create example skill: ux-ui-improver/SKILL.md
+- [x] Create example .claude structure (AC: #1, #2, #3)
+  - [x] Create `.claude/commands/` directory
+  - [x] Create `.claude/skills/` directory
+  - [x] Create `.claude/agents/` directory
+  - [x] Create example commands: diagnose.md, verify-python.md, review-code.md
+  - [x] Create example skill: ux-ui-improver/SKILL.md
 
-- [ ] Implement agent reload functionality (AC: #1, #2, #3)
-  - [ ] Implement reload_agent(agent_id) method
-  - [ ] Implement watch_changes() async method for hot-reload
-  - [ ] Emit signals on agent add/remove/update
+- [x] Implement agent reload functionality (AC: #1, #2, #3)
+  - [x] Implement reload_agent(agent_id) method
+  - [x] Implement watch_changes() async method for hot-reload
+  - [x] Emit signals on agent add/remove/update
 
 ## Dev Notes
 
@@ -116,7 +116,79 @@ Context: {{context_folder}}
 claude-sonnet-4-5-20250929
 
 ### Completion Notes
-[To be filled during implementation]
+✅ Story 3 Implementation Complete
+
+**Summary:**
+Successfully implemented DynamicAgentLoader following TDD principles with comprehensive test coverage.
+
+**Implementation Highlights:**
+- Created DynamicAgentLoader class with async scanning methods for commands, skills, and agents
+- Implemented YAML frontmatter extraction with robust error handling
+- Added metadata caching with file modification time-based invalidation
+- Lazy loading implemented - only metadata loaded initially, full content on demand
+- Created example .claude structure with 5 sample agents (3 commands, 1 skill, 1 agent)
+- Agent reload functionality with cache invalidation
+
+**Technical Achievements:**
+- Followed TDD cycle: Red (32 tests written) → Green (all tests passing) → Refactor (code quality verified)
+- All 157 tests passing (unit + integration + existing tests)
+- Performance targets met: 50 agents scanned in < 0.4s (target: < 2s)
+- Cache size limits implemented (1000 entries default)
+- Proper async/await patterns used throughout
+- Comprehensive error handling for invalid files, missing directories, etc.
+
+**Test Coverage:**
+- 32 unit tests for agent_loader.py
+- 8 integration tests for end-to-end workflows
+- All existing tests still passing (no regressions)
+- Tests cover happy paths, edge cases, error conditions, and performance
+
+**Acceptance Criteria Validation:**
+✅ AC1: Commands scanned from .claude/commands/*.md with type="command" and emoji="📝"
+✅ AC2: Skills scanned from .claude/skills/*/SKILL.md with type="skill" and emoji="🎯"
+✅ AC3: Agents scanned from .claude/agents/*.md with type="agent" and emoji="🤖"
+✅ AC4: YAML frontmatter extraction working (id, name, description, version, tools, etc.)
+✅ AC5: Correct emoji assignment and metadata caching implemented
+
+**Files Modified/Created:**
+- core/agent_loader.py (created) - 505 lines
+- tests/test_agent_loader.py (created) - 758 lines
+- tests/test_agent_loader_integration.py (created) - 274 lines
+- .claude/commands/diagnose.md (created)
+- .claude/commands/verify-python.md (created)
+- .claude/commands/review-code.md (created)
+- .claude/skills/ux-ui-improver/SKILL.md (created)
+- .claude/agents/code-architect.md (created)
+
+**Anti-Patterns Avoided:**
+✅ Scanning limited to .claude/ directories only
+✅ Lazy loading - content loaded on demand via VirtualAgent.load_content()
+✅ Invalid files handled gracefully with logging
+✅ Correct emoji assignment based on agent type
+✅ Async file operations used throughout
+✅ Cache size limits implemented (FIFO eviction)
+
+**Next Steps:**
+- Story is ready for review
+- All acceptance criteria satisfied
+- Comprehensive test coverage
+- Ready for integration with Virtual Agent Executor (future story)
 
 ### File List
-[To be filled during implementation]
+**Core Implementation:**
+- core/agent_loader.py (created, 505 lines)
+
+**Test Files:**
+- tests/test_agent_loader.py (created, 758 lines)
+- tests/test_agent_loader_integration.py (created, 274 lines)
+
+**Example Agents:**
+- .claude/commands/diagnose.md (created)
+- .claude/commands/verify-python.md (created)
+- .claude/commands/review-code.md (created)
+- .claude/skills/ux-ui-improver/SKILL.md (created)
+- .claude/agents/code-architect.md (created)
+
+**Story File:**
+- @agentclick-v2/stories/3-dynamic-agent-loader.md (updated)
+
