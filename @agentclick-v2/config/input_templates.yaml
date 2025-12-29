@@ -1,4 +1,9 @@
 templates:
+  '-':
+    enabled: true
+    template: 'Input: {{input}}
+
+      Context: {{context_folder}}'
   diagnose:
     enabled: true
     template: 'Problem: {{input}}
@@ -15,6 +20,11 @@ templates:
       Focus File: {{focus_file}}
 
       '
+  test-agent:
+    enabled: true
+    template: 'Input: {{input}}
+
+      Context: {{context_folder}}'
   test-command:
     enabled: true
     template: 'Valid template: {{input}}'
