@@ -105,3 +105,71 @@ class TestTemplateConfigDataclass:
         assert config1.agent_id != config2.agent_id
         assert config1.template != config2.template
         assert config1.enabled != config2.enabled
+
+
+class TestTemplateConfigEdgeCases:
+    """Test TemplateConfig edge cases."""
+
+    def test_template_config_with_empty_strings(self):
+        """Test TemplateConfig with empty string fields."""
+        config = TemplateConfig(
+            agent_id="",
+            template="",
+            enabled=False,
+            variables={}
+        )
+
+        assert config.agent_id == ""
+        assert config.template == ""
+        assert config.enabled is False
+
+    def test_template_config_with_unicode_variables(self):
+        """Test TemplateConfig with unicode values in variables."""
+        config = TemplateConfig(
+            agent_id="unicode-agent",
+            template="Template with {emoji} and {text}",
+            enabled=True,
+            variables={
+                "emoji": "🎉",
+                "text": "Hello 世界",
+                "special": "Ñoño"
+            }
+        )
+
+        assert config.variables["emoji"] == "🎉"
+        assert config.variables["text"] == "Hello 世界"
+        assert config.variables["special"] == "Ñoño"
+
+    def test_template_config_with_nested_variables(self):
+        """Test TemplateConfig with complex nested values."""
+        config = TemplateConfig(
+            agent_id="complex-agent",
+            template="Process {data}",
+            enabled=True,
+            variables={
+                "data": "simple",
+                "nested_dict": {"key": "value"},
+                "list_value": [1, 2, 3],
+                "mixed": {"array": [{"item": "value"}]}
+            }
+        )
+
+        assert isinstance(config.variables["nested_dict"], dict)
+        assert isinstance(config.variables["list_value"], list)
+
+    def test_template_config_variables_none_values(self):
+        """Test TemplateConfig with None values in variables."""
+        config = TemplateConfig(
+            agent_id="test",
+            template="Test {var}",
+            enabled=True,
+            variables={
+                "var1": None,
+                "var2": "value",
+                "var3": ""
+            }
+        )
+
+        assert config.variables["var1"] is None
+        assert config.variables["var2"] == "value"
+        assert config.variables["var3"] == ""

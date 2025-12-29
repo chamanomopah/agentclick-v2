@@ -2,6 +2,7 @@
 Tests for VirtualAgent dataclass.
 """
 import pytest
+import tempfile
 from pathlib import Path
 from typing import get_type_hints
 from models.virtual_agent import VirtualAgent
@@ -145,56 +146,195 @@ class TestVirtualAgentDataclass:
 class TestVirtualAgentMethods:
     """Test VirtualAgent methods."""
 
-    def test_load_content_method_exists(self):
-        """Test that load_content method exists."""
+    def test_load_content_reads_file(self):
+        """Test load_content actually reads file content."""
+        # Create temp file with known content
+        with tempfile.NamedTemporaryFile(mode='w', delete=False, suffix='.py') as f:
+            f.write('print("hello world")')
+            temp_path = Path(f.name)
+
+        try:
+            agent = VirtualAgent(
+                id="test",
+                type="command",
+                name="Test",
+                description="Test",
+                source_file=temp_path,
+                emoji="🤖",
+                color="#000000",
+                enabled=True,
+                workspace_id=None,
+                metadata={}
+            )
+            content = agent.load_content()
+            assert content == 'print("hello world")'
+        finally:
+            temp_path.unlink()
+
+    def test_load_content_raises_file_not_found(self):
+        """Test load_content raises FileNotFoundError for missing file."""
         agent = VirtualAgent(
-            id="test-agent",
+            id="test",
             type="command",
             name="Test",
             description="Test",
-            source_file=Path("/test/file.py"),
+            source_file=Path("/non/existent/file.py"),
             emoji="🤖",
             color="#000000",
             enabled=True,
             workspace_id=None,
             metadata={}
         )
+        with pytest.raises(FileNotFoundError, match="Agent source file not found"):
+            agent.load_content()
 
-        assert hasattr(agent, 'load_content')
-        assert callable(agent.load_content)
+    def test_extract_metadata_combines_metadata(self):
+        """Test extract_metadata combines base and custom metadata."""
+        agent = VirtualAgent(
+            id="test-agent",
+            type="skill",
+            name="Test Agent",
+            description="A test agent",
+            source_file=Path("/test/agent.py"),
+            emoji="🤖",
+            color="#000000",
+            enabled=True,
+            workspace_id="workspace-1",
+            metadata={"category": "testing", "priority": "high"}
+        )
 
-    def test_extract_metadata_method_exists(self):
-        """Test that extract_metadata method exists."""
+        result = agent.extract_metadata()
+
+        assert result["type"] == "skill"
+        assert result["enabled"] is True
+        assert result["has_workspace"] is True
+        assert result["category"] == "testing"
+        assert result["priority"] == "high"
+
+    def test_extract_metadata_without_workspace(self):
+        """Test extract_metadata with unassigned agent."""
         agent = VirtualAgent(
             id="test-agent",
             type="command",
-            name="Test",
-            description="Test",
-            source_file=Path("/test/file.py"),
+            name="Test Agent",
+            description="A test agent",
+            source_file=Path("/test/agent.py"),
             emoji="🤖",
+            color="#000000",
+            enabled=False,
+            workspace_id=None,
+            metadata={}
+        )
+
+        result = agent.extract_metadata()
+
+        assert result["type"] == "command"
+        assert result["enabled"] is False
+        assert result["has_workspace"] is False
+        assert len(result) == 3  # Only base metadata
+
+    def test_get_system_prompt_format(self):
+        """Test get_system_prompt returns formatted string."""
+        agent = VirtualAgent(
+            id="git-commit",
+            type="command",
+            name="Git Commit",
+            description="Commit changes to git repository",
+            source_file=Path("/test/git.py"),
+            emoji="📝",
             color="#000000",
             enabled=True,
             workspace_id=None,
             metadata={}
         )
 
-        assert hasattr(agent, 'extract_metadata')
-        assert callable(agent.extract_metadata)
+        prompt = agent.get_system_prompt()
 
-    def test_get_system_prompt_method_exists(self):
-        """Test that get_system_prompt method exists."""
+        assert "Git Commit" in prompt
+        assert "Commit changes to git repository" in prompt
+        assert "command" in prompt
+        assert "Type:" in prompt
+
+    def test_get_system_prompt_empty_description(self):
+        """Test get_system_prompt with minimal agent."""
         agent = VirtualAgent(
-            id="test-agent",
-            type="command",
-            name="Test",
-            description="Test",
-            source_file=Path("/test/file.py"),
-            emoji="🤖",
+            id="minimal",
+            type="agent",
+            name="Minimal",
+            description="",
+            source_file=Path("/test/minimal.py"),
+            emoji="🔧",
             color="#000000",
             enabled=True,
             workspace_id=None,
             metadata={}
         )
 
-        assert hasattr(agent, 'get_system_prompt')
-        assert callable(agent.get_system_prompt)
+        prompt = agent.get_system_prompt()
+
+        assert "Minimal" in prompt
+        assert "agent" in prompt
+
+
+class TestVirtualAgentEdgeCases:
+    """Test VirtualAgent edge cases."""
+
+    def test_virtual_agent_with_empty_strings(self):
+        """Test VirtualAgent with empty string fields."""
+        agent = VirtualAgent(
+            id="",  # Empty ID
+            type="command",
+            name="",  # Empty name
+            description="",  # Empty description
+            source_file=Path("/test/empty.py"),
+            emoji="",  # Empty emoji
+            color="",  # Empty color
+            enabled=True,
+            workspace_id=None,
+            metadata={}
+        )
+
+        assert agent.id == ""
+        assert agent.name == ""
+        assert agent.description == ""
+        assert agent.emoji == ""
+        assert agent.color == ""
+
+    def test_virtual_agent_with_special_characters_in_id(self):
+        """Test VirtualAgent with special characters in ID."""
+        agent = VirtualAgent(
+            id="agent-with-special.chars_123",
+            type="skill",
+            name="Special Agent",
+            description="Agent with special chars",
+            source_file=Path("/test/special.py"),
+            emoji="⚡",
+            color="#FF00FF",
+            enabled=True,
+            workspace_id=None,
+            metadata={}
+        )
+
+        assert "agent-with-special.chars_123" == agent.id
+
+    def test_virtual_agent_metadata_mutation(self):
+        """Test that metadata dict can be mutated."""
+        agent = VirtualAgent(
+            id="test",
+            type="command",
+            name="Test",
+            description="Test",
+            source_file=Path("/test/test.py"),
+            emoji="🧪",
+            color="#000000",
+            enabled=True,
+            workspace_id=None,
+            metadata={"initial": "value"}
+        )
+
+        # Modify metadata
+        agent.metadata["new_key"] = "new_value"
+        agent.metadata["initial"] = "modified"
+
+        assert agent.metadata["new_key"] == "new_value"
+        assert agent.metadata["initial"] == "modified"

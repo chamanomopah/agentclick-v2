@@ -5,7 +5,7 @@ project:
   current_story: null
 
 stories:
-  1-project-structure-core-models: review
+  1-project-structure-core-models: done
   2-workspace-manager: backlog
   3-dynamic-agent-loader: backlog
   4-template-engine: backlog

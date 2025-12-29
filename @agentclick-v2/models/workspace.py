@@ -8,7 +8,7 @@ from dataclasses import dataclass, field
 from pathlib import Path
 from typing import Optional
 
-from models.virtual_agent import VirtualAgent
+from .virtual_agent import VirtualAgent
 
 
 @dataclass
@@ -45,6 +45,16 @@ class Workspace:
     emoji: str
     color: str
     agents: list[VirtualAgent] = field(default_factory=list)
+    _agent_index: dict[str, VirtualAgent] = field(
+        default_factory=dict,
+        init=False,
+        repr=False,
+        compare=False
+    )
+
+    def __post_init__(self):
+        """Initialize the agent index after dataclass creation."""
+        self._agent_index = {agent.id: agent for agent in self.agents}
 
     def add_agent(self, agent: VirtualAgent) -> None:
         """
@@ -57,6 +67,7 @@ class Workspace:
             >>> workspace.add_agent(my_agent)
         """
         self.agents.append(agent)
+        self._agent_index[agent.id] = agent
 
     def remove_agent(self, agent_id: str) -> None:
         """
@@ -71,10 +82,13 @@ class Workspace:
             >>> workspace.remove_agent("agent-123")
         """
         self.agents = [a for a in self.agents if a.id != agent_id]
+        self._agent_index.pop(agent_id, None)
 
     def get_agent(self, agent_id: str) -> Optional[VirtualAgent]:
         """
         Retrieve a virtual agent from this workspace by ID.
+
+        Uses O(1) index lookup for optimal performance.
 
         Args:
             agent_id: ID of the agent to retrieve
@@ -87,10 +101,7 @@ class Workspace:
             >>> if agent:
             ...     print(agent.name)
         """
-        for agent in self.agents:
-            if agent.id == agent_id:
-                return agent
-        return None
+        return self._agent_index.get(agent_id)
 
     def get_enabled_agents(self) -> list[VirtualAgent]:
         """

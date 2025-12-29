@@ -145,3 +145,64 @@ class TestExecutionResultMethods:
         )
 
         assert result1 != result2
+
+
+class TestExecutionResultEdgeCases:
+    """Test ExecutionResult edge cases."""
+
+    def test_execution_result_with_empty_output(self):
+        """Test ExecutionResult with empty output string."""
+        result = ExecutionResult(
+            output="",  # Empty output
+            status="success",
+            metadata={}
+        )
+
+        assert result.output == ""
+        assert result.is_success() is True
+
+    def test_execution_result_with_large_metadata(self):
+        """Test ExecutionResult with complex nested metadata."""
+        result = ExecutionResult(
+            output="Complex result",
+            status="partial",
+            metadata={
+                "execution_time": 1.5,
+                "nested": {
+                    "level1": {
+                        "level2": ["item1", "item2", "item3"]
+                    }
+                },
+                "counts": {"total": 100, "failed": 5},
+                "timestamps": [1.0, 2.0, 3.0]
+            }
+        )
+
+        assert result.metadata["nested"]["level1"]["level2"][0] == "item1"
+        assert result.metadata["counts"]["total"] == 100
+
+    def test_execution_result_unicode_output(self):
+        """Test ExecutionResult with unicode characters in output."""
+        result = ExecutionResult(
+            output="Unicode: 你好 🎉 Ñoño café",
+            status="success",
+            metadata={"language": "mixed"}
+        )
+
+        assert "你好" in result.output
+        assert "🎉" in result.output
+        assert "Ñoño" in result.output
+
+    def test_execution_result_metadata_mutation(self):
+        """Test that metadata dict can be mutated."""
+        result = ExecutionResult(
+            output="Test",
+            status="success",
+            metadata={"initial": "value"}
+        )
+
+        result.metadata["new_key"] = "new_value"
+        result.metadata["initial"] = "modified"
+
+        assert result.metadata["new_key"] == "new_value"
+        assert result.metadata["initial"] == "modified"

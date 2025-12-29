@@ -362,3 +362,117 @@ class TestWorkspaceMethods:
         enabled = workspace.get_enabled_agents()
 
         assert enabled == []
+
+
+class TestWorkspaceEdgeCases:
+    """Test Workspace edge cases."""
+
+    def test_workspace_with_duplicate_agent_ids(self):
+        """Test workspace when agents with same ID are added."""
+        workspace = Workspace(
+            id="workspace-1",
+            name="Test",
+            folder=Path("/test"),
+            emoji="📁",
+            color="#000000",
+            agents=[]
+        )
+
+        agent1 = VirtualAgent(
+            id="duplicate-id",
+            type="command",
+            name="Agent 1",
+            description="First",
+            source_file=Path("/test/1.py"),
+            emoji="1️⃣",
+            color="#FF0000",
+            enabled=True,
+            workspace_id="workspace-1",
+            metadata={}
+        )
+
+        agent2 = VirtualAgent(
+            id="duplicate-id",  # Same ID!
+            type="skill",
+            name="Agent 2",
+            description="Second",
+            source_file=Path("/test/2.py"),
+            emoji="2️⃣",
+            color="#00FF00",
+            enabled=True,
+            workspace_id="workspace-1",
+            metadata={}
+        )
+
+        workspace.add_agent(agent1)
+        workspace.add_agent(agent2)  # Overwrites agent1 in index
+
+        # Both agents are in the list (list allows duplicates)
+        assert len(workspace.agents) == 2
+
+        # But index only has agent2 (last write wins)
+        retrieved = workspace.get_agent("duplicate-id")
+        assert retrieved.name == "Agent 2"
+
+    def test_workspace_with_empty_string_fields(self):
+        """Test workspace with empty string fields."""
+        workspace = Workspace(
+            id="",
+            name="",
+            folder=Path("/test"),
+            emoji="",
+            color="",
+            agents=[]
+        )
+
+        assert workspace.id == ""
+        assert workspace.name == ""
+        assert workspace.emoji == ""
+        assert workspace.color == ""
+
+    def test_workspace_get_agent_with_empty_id(self):
+        """Test get_agent with empty string ID."""
+        agent = VirtualAgent(
+            id="",  # Empty ID
+            type="command",
+            name="Empty ID Agent",
+            description="Agent with empty ID",
+            source_file=Path("/test/empty.py"),
+            emoji="🔳",
+            color="#CCCCCC",
+            enabled=True,
+            workspace_id="workspace-1",
+            metadata={}
+        )
+
+        workspace = Workspace(
+            id="workspace-1",
+            name="Test",
+            folder=Path("/test"),
+            emoji="📁",
+            color="#000000",
+            agents=[agent]
+        )
+
+        # Rebuild index after manual initialization
+        workspace._agent_index[agent.id] = agent
+
+        retrieved = workspace.get_agent("")
+        assert retrieved is not None
+        assert retrieved.name == "Empty ID Agent"
+
+    def test_workspace_remove_nonexistent_agent(self):
+        """Test removing agent that doesn't exist doesn't raise error."""
+        workspace = Workspace(
+            id="workspace-1",
+            name="Test",
+            folder=Path("/test"),
+            emoji="📁",
+            color="#000000",
+            agents=[]
+        )
+
+        # Should not raise error
+        workspace.remove_agent("nonexistent-agent")
+
+        assert len(workspace.agents) == 0

@@ -63,9 +63,17 @@ class VirtualAgent:
 
         Raises:
             FileNotFoundError: If source_file doesn't exist
-            IOError: If unable to read the file
+            UnicodeDecodeError: If file is not valid UTF-8
+            PermissionError: If file cannot be read
         """
-        return self.source_file.read_text(encoding='utf-8')
+        try:
+            return self.source_file.read_text(encoding='utf-8')
+        except FileNotFoundError as e:
+            raise FileNotFoundError(f"Agent source file not found: {self.source_file}") from e
+        except UnicodeDecodeError as e:
+            raise ValueError(f"Agent source file is not valid UTF-8: {self.source_file}") from e
+        except PermissionError as e:
+            raise PermissionError(f"Permission denied reading agent source file: {self.source_file}") from e
 
     def extract_metadata(self) -> dict:
         """

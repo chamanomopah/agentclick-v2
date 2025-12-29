@@ -15,10 +15,10 @@ Type Aliases:
     ExecutionStatus: Literal type for execution statuses
     WorkspaceList: List of Workspace instances
 """
-from models.virtual_agent import VirtualAgent
-from models.workspace import Workspace
-from models.template_config import TemplateConfig
-from models.execution_result import ExecutionResult
+from .virtual_agent import VirtualAgent
+from .workspace import Workspace
+from .template_config import TemplateConfig
+from .execution_result import ExecutionResult
 from typing import Literal, List
 
 # Export all main classes
