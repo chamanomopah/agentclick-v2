@@ -11,7 +11,7 @@ stories:
   4-template-engine: done
   5-virtual-agent-executor: done
   6-enhanced-input-processor: done
-  7-mini-popup-v2: backlog
+  7-mini-popup-v2: done
   8-detailed-popup-workspaces-tab: backlog
   9-hotkey-processor-v2: backlog
   10-configuration-ui-templates-editor: backlog
